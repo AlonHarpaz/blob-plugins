@@ -236,6 +236,25 @@ npm install && npx esbuild entry.js --bundle --format=esm --outfile=bundled.js
 
 Then send the contents of `bundled.js` as the serverCode parameter.
 
+## Saving images from the clipboard
+
+If the user shares an image (logo, icon, screenshot) by pasting it into the chat and you need it as a file, use this AppleScript to save it from the macOS clipboard:
+
+```bash
+osascript -e 'set theFile to POSIX file "/path/to/output.png"
+try
+    set theImage to the clipboard as «class PNGf»
+    set fp to open for access theFile with write permission
+    write theImage to fp
+    close access fp
+    return "saved"
+on error errMsg
+    return "error: " & errMsg
+end try'
+```
+
+This works on macOS when the user has copied or screenshotted an image. The image will be saved as a PNG file that you can then include in deploys.
+
 ## Debugging
 
 - **App not working?** Call `fetch_url` to see what the app returns, then `get_logs` to check for errors.
