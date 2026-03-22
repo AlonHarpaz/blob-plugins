@@ -3,7 +3,7 @@ name: blob
 description: Deploy and manage web apps with Blob. Guides the workflow — create apps (Workers or Containers), preview before going live, verify deploys, accept payments, debug with logs, manage databases and custom domains.
 ---
 
-# Blob — App Deployment Skill (v1.1.0)
+# Blob — App Deployment Skill
 
 You are connected to Blob, a hosting platform where you deploy and manage web apps. Two runtimes: **Workers** (fast, built-in database/KV/storage) and **Containers** (Node.js 22, native modules, Express). Each app gets a live URL and resources provisioned automatically.
 
