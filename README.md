@@ -1,6 +1,10 @@
-# Blob Plugins
+<p align="center">
+  <img src="icon.png" alt="Blob" width="120" />
+</p>
 
-Skills and app templates for [Blob](https://imblob.com) — the AI-first hosting platform.
+<h1 align="center">Blob Plugins</h1>
+
+<p align="center">Skills and app templates for <a href="https://imblob.com">Blob</a> — the AI-first hosting platform.</p>
 
 ## Plugins
 

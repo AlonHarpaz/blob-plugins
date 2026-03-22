@@ -4,6 +4,7 @@
     "name": "Blob",
     "email": "hello@imblob.com"
   },
+  "icon": "../icon.png",
   "metadata": {
     "description": "Skills and app templates for Blob — the AI-first hosting platform",
     "version": "1.0.0",

@@ -1,5 +1,6 @@
 {
   "name": "email-marketing-app",
   "version": "1.0.0",
-  "description": "Build and deploy a complete email marketing app on Blob"
+  "description": "Build and deploy a complete email marketing app on Blob",
+  "icon": "../../icon.png"
 }

@@ -1,5 +1,6 @@
 {
   "name": "blob",
   "version": "1.4.0",
-  "description": "Deploy and manage web apps with Blob — the AI-first hosting platform"
+  "description": "Deploy and manage web apps with Blob — the AI-first hosting platform",
+  "icon": "../../icon.png"
 }
