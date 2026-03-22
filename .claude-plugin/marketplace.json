@@ -1,0 +1,40 @@
+{
+  "name": "blob-plugins",
+  "owner": {
+    "name": "Blob",
+    "email": "hello@imblob.com"
+  },
+  "metadata": {
+    "description": "Skills and app templates for Blob — the AI-first hosting platform",
+    "version": "1.0.0",
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "blob",
+      "source": "./blob",
+      "description": "Deploy and manage web apps with Blob. Guides the workflow — create apps (Workers or Containers), preview before going live, verify deploys, accept payments, debug with logs, manage databases and custom domains.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Blob"
+      },
+      "homepage": "https://imblob.com",
+      "license": "MIT",
+      "keywords": ["hosting", "deploy", "mcp", "cloudflare"],
+      "category": "deployment"
+    },
+    {
+      "name": "email-marketing-app",
+      "source": "./email-marketing-app",
+      "description": "Build and deploy a complete email marketing app with contacts, campaigns, templates, and Resend integration on Blob.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Blob"
+      },
+      "homepage": "https://imblob.com",
+      "license": "MIT",
+      "keywords": ["email", "marketing", "template", "resend"],
+      "category": "templates"
+    }
+  ]
+}

@@ -1,0 +1,192 @@
+<!-- Contacts page fragment — injected into #content by index.html -->
+<div>
+  <!-- Top bar -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <div class="relative flex-1 max-w-md">
+      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      <input id="ct-search" type="text" placeholder="Search contacts..." class="w-full pl-10 pr-4 py-2 bg-dark-700 border border-dark-600 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-accent text-sm">
+    </div>
+    <div class="flex gap-2">
+      <button onclick="ctShowImport()" class="px-4 py-2 border border-dark-500 text-neutral-300 hover:text-white hover:border-neutral-400 rounded-lg text-sm transition-colors">Import</button>
+      <button onclick="ctShowModal()" class="px-4 py-2 bg-accent hover:bg-accent-hover rounded-lg text-sm font-medium transition-colors">Add Contact</button>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="bg-dark-800 border border-dark-600 rounded-xl overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-dark-600 text-left text-neutral-400">
+            <th class="px-4 py-3 font-medium">Name</th>
+            <th class="px-4 py-3 font-medium">Email</th>
+            <th class="px-4 py-3 font-medium hidden sm:table-cell">Tags</th>
+            <th class="px-4 py-3 font-medium hidden sm:table-cell">Status</th>
+            <th class="px-4 py-3 font-medium w-20"></th>
+          </tr>
+        </thead>
+        <tbody id="ct-table"></tbody>
+      </table>
+    </div>
+    <div id="ct-empty" class="hidden p-12 text-center text-neutral-500">No contacts yet. Add your first contact to get started.</div>
+    <div id="ct-count" class="px-4 py-3 border-t border-dark-600 text-sm text-neutral-500"></div>
+  </div>
+
+  <!-- Add/Edit Modal -->
+  <div id="ct-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+    <div class="bg-dark-800 border border-dark-600 rounded-xl p-6 w-full max-w-md mx-4">
+      <h3 id="ct-modal-title" class="text-lg font-semibold mb-4">Add Contact</h3>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm text-neutral-400 mb-1">Email *</label>
+          <input id="ct-email" type="email" required class="w-full px-3 py-2 bg-dark-700 border border-dark-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-accent text-sm" placeholder="contact@example.com">
+        </div>
+        <div>
+          <label class="block text-sm text-neutral-400 mb-1">Name</label>
+          <input id="ct-name" type="text" class="w-full px-3 py-2 bg-dark-700 border border-dark-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-accent text-sm" placeholder="John Doe">
+        </div>
+        <div>
+          <label class="block text-sm text-neutral-400 mb-1">Tags</label>
+          <input id="ct-tags" type="text" class="w-full px-3 py-2 bg-dark-700 border border-dark-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-accent text-sm" placeholder="newsletter, vip">
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 mt-6">
+        <button onclick="ctCloseModal()" class="px-4 py-2 text-neutral-400 hover:text-white text-sm transition-colors">Cancel</button>
+        <button onclick="ctSave()" class="px-4 py-2 bg-accent hover:bg-accent-hover rounded-lg text-sm font-medium transition-colors">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import Modal -->
+  <div id="ct-import-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+    <div class="bg-dark-800 border border-dark-600 rounded-xl p-6 w-full max-w-lg mx-4">
+      <h3 class="text-lg font-semibold mb-2">Import Contacts</h3>
+      <p class="text-sm text-neutral-400 mb-4">Paste a JSON array of contacts. Each object needs at minimum an <code class="bg-dark-700 px-1 rounded">email</code> field.</p>
+      <textarea id="ct-import-data" rows="8" class="w-full px-3 py-2 bg-dark-700 border border-dark-500 rounded-lg text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent" placeholder='[{"email": "a@b.com", "name": "Alice", "tags": "vip"}]'></textarea>
+      <div class="flex justify-end gap-3 mt-4">
+        <button onclick="ctCloseImport()" class="px-4 py-2 text-neutral-400 hover:text-white text-sm transition-colors">Cancel</button>
+        <button onclick="ctImport()" class="px-4 py-2 bg-accent hover:bg-accent-hover rounded-lg text-sm font-medium transition-colors">Import</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  let contacts = [];
+  let editingId = null;
+
+  const statusColors = { active: 'bg-green-900/50 text-green-400', unsubscribed: 'bg-yellow-900/50 text-yellow-400', bounced: 'bg-red-900/50 text-red-400' };
+
+  async function load() {
+    const res = await api('/api/contacts');
+    if (!res) return;
+    contacts = await res.json();
+    render(contacts);
+  }
+
+  function render(list) {
+    const tbody = document.getElementById('ct-table');
+    const empty = document.getElementById('ct-empty');
+    const count = document.getElementById('ct-count');
+    if (!list.length) {
+      tbody.innerHTML = '';
+      empty.classList.remove('hidden');
+      count.textContent = '';
+      return;
+    }
+    empty.classList.add('hidden');
+    count.textContent = `Showing ${list.length} contact${list.length !== 1 ? 's' : ''}`;
+    tbody.innerHTML = list.map(c => `<tr class="border-b border-dark-600 hover:bg-dark-700/50">
+      <td class="px-4 py-3 text-white">${esc(c.name || '-')}</td>
+      <td class="px-4 py-3 text-neutral-300">${esc(c.email)}</td>
+      <td class="px-4 py-3 hidden sm:table-cell">${c.tags ? c.tags.split(',').map(t => `<span class="inline-block px-2 py-0.5 bg-accent/10 text-accent text-xs rounded-full mr-1">${esc(t.trim())}</span>`).join('') : '<span class="text-neutral-500">-</span>'}</td>
+      <td class="px-4 py-3 hidden sm:table-cell"><span class="px-2 py-0.5 text-xs rounded-full ${statusColors[c.status] || ''}">${c.status}</span></td>
+      <td class="px-4 py-3">
+        <div class="flex gap-1">
+          <button onclick="ctEdit('${c.id}')" class="p-1.5 text-neutral-500 hover:text-white rounded transition-colors" title="Edit">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+          </button>
+          <button onclick="ctDelete('${c.id}')" class="p-1.5 text-neutral-500 hover:text-red-400 rounded transition-colors" title="Delete">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </button>
+        </div>
+      </td>
+    </tr>`).join('');
+  }
+
+  // Search
+  document.getElementById('ct-search').addEventListener('input', function() {
+    const q = this.value.toLowerCase();
+    render(q ? contacts.filter(c => c.email.toLowerCase().includes(q) || (c.name || '').toLowerCase().includes(q) || (c.tags || '').toLowerCase().includes(q)) : contacts);
+  });
+
+  // Modal
+  window.ctShowModal = function(id) {
+    editingId = id || null;
+    document.getElementById('ct-modal-title').textContent = id ? 'Edit Contact' : 'Add Contact';
+    if (id) {
+      const c = contacts.find(x => x.id === id);
+      if (c) {
+        document.getElementById('ct-email').value = c.email;
+        document.getElementById('ct-name').value = c.name || '';
+        document.getElementById('ct-tags').value = c.tags || '';
+      }
+    } else {
+      document.getElementById('ct-email').value = '';
+      document.getElementById('ct-name').value = '';
+      document.getElementById('ct-tags').value = '';
+    }
+    document.getElementById('ct-modal').classList.remove('hidden');
+  };
+  window.ctEdit = function(id) { ctShowModal(id); };
+  window.ctCloseModal = function() { document.getElementById('ct-modal').classList.add('hidden'); editingId = null; };
+
+  window.ctSave = async function() {
+    const email = document.getElementById('ct-email').value.trim();
+    const name = document.getElementById('ct-name').value.trim();
+    const tags = document.getElementById('ct-tags').value.trim();
+    if (!email) { showToast('Email is required', 'error'); return; }
+    const body = JSON.stringify({ email, name, tags });
+    let res;
+    if (editingId) {
+      res = await api('/api/contacts/' + editingId, { method: 'PUT', body });
+    } else {
+      res = await api('/api/contacts', { method: 'POST', body });
+    }
+    if (!res) return;
+    if (!res.ok) { const d = await res.json(); showToast(d.error || 'Failed', 'error'); return; }
+    showToast(editingId ? 'Contact updated' : 'Contact added');
+    ctCloseModal();
+    load();
+  };
+
+  window.ctDelete = async function(id) {
+    if (!confirm('Delete this contact?')) return;
+    const res = await api('/api/contacts/' + id, { method: 'DELETE' });
+    if (!res) return;
+    if (!res.ok) { showToast('Failed to delete', 'error'); return; }
+    showToast('Contact deleted');
+    load();
+  };
+
+  // Import
+  window.ctShowImport = function() { document.getElementById('ct-import-modal').classList.remove('hidden'); };
+  window.ctCloseImport = function() { document.getElementById('ct-import-modal').classList.add('hidden'); document.getElementById('ct-import-data').value = ''; };
+  window.ctImport = async function() {
+    const raw = document.getElementById('ct-import-data').value.trim();
+    let data;
+    try { data = JSON.parse(raw); } catch { showToast('Invalid JSON', 'error'); return; }
+    if (!Array.isArray(data)) { showToast('Must be a JSON array', 'error'); return; }
+    const res = await api('/api/contacts/import', { method: 'POST', body: JSON.stringify(data) });
+    if (!res) return;
+    const result = await res.json();
+    if (!res.ok) { showToast(result.error || 'Import failed', 'error'); return; }
+    showToast(`Imported ${result.imported} contacts` + (result.skipped ? `, ${result.skipped} skipped` : ''));
+    ctCloseImport();
+    load();
+  };
+
+  load();
+})();
+</script>

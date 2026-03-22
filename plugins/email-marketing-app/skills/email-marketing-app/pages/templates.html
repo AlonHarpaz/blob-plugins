@@ -1,0 +1,182 @@
+<!-- Templates page fragment — injected into #content by index.html -->
+<div>
+  <!-- Top bar -->
+  <div class="flex items-center justify-between mb-6">
+    <div></div>
+    <button onclick="tplNew()" class="px-4 py-2 bg-accent hover:bg-accent-hover rounded-lg text-sm font-medium transition-colors">New Template</button>
+  </div>
+
+  <!-- Template grid -->
+  <div id="tpl-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+  <div id="tpl-empty" class="hidden bg-dark-800 border border-dark-600 rounded-xl p-12 text-center text-neutral-500">No templates yet. Create your first template.</div>
+
+  <!-- Editor Modal -->
+  <div id="tpl-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+    <div class="bg-dark-800 border border-dark-600 rounded-xl p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-4">
+        <h3 id="tpl-modal-title" class="text-lg font-semibold">New Template</h3>
+        <button onclick="tplClose()" class="text-neutral-500 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm text-neutral-400 mb-1">Template Name *</label>
+            <input id="tpl-name" type="text" class="w-full px-3 py-2 bg-dark-700 border border-dark-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-accent text-sm" placeholder="Welcome Email">
+          </div>
+          <div>
+            <label class="block text-sm text-neutral-400 mb-1">Subject Line</label>
+            <input id="tpl-subject" type="text" class="w-full px-3 py-2 bg-dark-700 border border-dark-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-accent text-sm" placeholder="Welcome to our newsletter!">
+          </div>
+          <div>
+            <label class="block text-sm text-neutral-400 mb-1">HTML Content</label>
+            <textarea id="tpl-html" rows="12" class="w-full px-3 py-2 bg-dark-700 border border-dark-500 rounded-lg text-white font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent" placeholder="<h1>Hello!</h1><p>Welcome...</p>"></textarea>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm text-neutral-400 mb-1">Live Preview</label>
+          <div class="bg-white rounded-lg overflow-hidden" style="min-height: 350px;">
+            <iframe id="tpl-preview" sandbox class="w-full" style="min-height: 350px; border: none;"></iframe>
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-between mt-6">
+        <button id="tpl-delete-btn" onclick="tplDelete()" class="hidden px-4 py-2 text-red-400 hover:text-red-300 text-sm transition-colors">Delete</button>
+        <div class="flex gap-3 ml-auto">
+          <button onclick="tplClose()" class="px-4 py-2 text-neutral-400 hover:text-white text-sm transition-colors">Cancel</button>
+          <button onclick="tplSave()" class="px-4 py-2 bg-accent hover:bg-accent-hover rounded-lg text-sm font-medium transition-colors">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  let templates = [];
+  let editingId = null;
+  let previewTimer = null;
+
+  function stripHtml(html) {
+    return (html || '').replace(/<[^>]*>/g, '').slice(0, 100);
+  }
+
+  async function load() {
+    const res = await api('/api/templates');
+    if (!res) return;
+    templates = await res.json();
+    render();
+  }
+
+  function render() {
+    const grid = document.getElementById('tpl-grid');
+    const empty = document.getElementById('tpl-empty');
+    if (!templates.length) { grid.textContent = ''; empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden');
+    // Build cards using safe DOM methods
+    grid.textContent = '';
+    templates.forEach(function(t) {
+      const card = document.createElement('div');
+      card.className = 'bg-dark-800 border border-dark-600 rounded-xl p-5 hover:border-dark-500 cursor-pointer transition-colors';
+      card.addEventListener('click', function() { tplEdit(t.id); });
+
+      const title = document.createElement('h3');
+      title.className = 'font-semibold text-white mb-1';
+      title.textContent = t.name;
+
+      const subject = document.createElement('p');
+      subject.className = 'text-sm text-neutral-400 mb-2';
+      subject.textContent = t.subject || 'No subject';
+
+      const snippet = document.createElement('p');
+      snippet.className = 'text-xs text-neutral-500';
+      snippet.textContent = stripHtml(t.html) || 'Empty template';
+      snippet.style.display = '-webkit-box';
+      snippet.style.webkitLineClamp = '2';
+      snippet.style.webkitBoxOrient = 'vertical';
+      snippet.style.overflow = 'hidden';
+
+      const date = document.createElement('p');
+      date.className = 'text-xs text-neutral-600 mt-3';
+      date.textContent = new Date(t.updated_at).toLocaleDateString();
+
+      card.appendChild(title);
+      card.appendChild(subject);
+      card.appendChild(snippet);
+      card.appendChild(date);
+      grid.appendChild(card);
+    });
+  }
+
+  // Preview — uses sandboxed iframe srcdoc (safe: no script execution)
+  function updatePreview() {
+    const iframe = document.getElementById('tpl-preview');
+    const html = document.getElementById('tpl-html').value;
+    iframe.srcdoc = html || '<p style="color:#999;padding:20px;font-family:sans-serif;">Preview will appear here...</p>';
+  }
+
+  // Debounced preview
+  document.getElementById('tpl-html').addEventListener('input', function() {
+    clearTimeout(previewTimer);
+    previewTimer = setTimeout(updatePreview, 300);
+  });
+
+  window.tplNew = function() {
+    editingId = null;
+    document.getElementById('tpl-modal-title').textContent = 'New Template';
+    document.getElementById('tpl-name').value = '';
+    document.getElementById('tpl-subject').value = '';
+    document.getElementById('tpl-html').value = '';
+    document.getElementById('tpl-delete-btn').classList.add('hidden');
+    updatePreview();
+    document.getElementById('tpl-modal').classList.remove('hidden');
+  };
+
+  window.tplEdit = function(id) {
+    const t = templates.find(function(x) { return x.id === id; });
+    if (!t) return;
+    editingId = id;
+    document.getElementById('tpl-modal-title').textContent = 'Edit Template';
+    document.getElementById('tpl-name').value = t.name;
+    document.getElementById('tpl-subject').value = t.subject || '';
+    document.getElementById('tpl-html').value = t.html || '';
+    document.getElementById('tpl-delete-btn').classList.remove('hidden');
+    updatePreview();
+    document.getElementById('tpl-modal').classList.remove('hidden');
+  };
+
+  window.tplClose = function() { document.getElementById('tpl-modal').classList.add('hidden'); editingId = null; };
+
+  window.tplSave = async function() {
+    const name = document.getElementById('tpl-name').value.trim();
+    const subject = document.getElementById('tpl-subject').value.trim();
+    const html = document.getElementById('tpl-html').value;
+    if (!name) { showToast('Name is required', 'error'); return; }
+    const body = JSON.stringify({ name, subject, html });
+    let res;
+    if (editingId) {
+      res = await api('/api/templates/' + editingId, { method: 'PUT', body });
+    } else {
+      res = await api('/api/templates', { method: 'POST', body });
+    }
+    if (!res) return;
+    if (!res.ok) { const d = await res.json(); showToast(d.error || 'Failed', 'error'); return; }
+    showToast(editingId ? 'Template updated' : 'Template created');
+    tplClose();
+    load();
+  };
+
+  window.tplDelete = async function() {
+    if (!editingId || !confirm('Delete this template?')) return;
+    const res = await api('/api/templates/' + editingId, { method: 'DELETE' });
+    if (!res) return;
+    if (!res.ok) { showToast('Failed to delete', 'error'); return; }
+    showToast('Template deleted');
+    tplClose();
+    load();
+  };
+
+  load();
+})();
+</script>
