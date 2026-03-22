@@ -14,7 +14,7 @@
       "name": "blob",
       "source": "./plugins/blob",
       "description": "Deploy and manage web apps with Blob. Guides the workflow — create apps (Workers or Containers), preview before going live, verify deploys, accept payments, debug with logs, manage databases and custom domains.",
-      "version": "1.3.0",
+      "version": "1.4.0",
       "author": {
         "name": "Blob"
       },
