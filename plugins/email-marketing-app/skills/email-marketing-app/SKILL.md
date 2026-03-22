@@ -1,4 +1,5 @@
 ---
+name: email-marketing-app
 description: Build and deploy a complete email marketing app with contacts, campaigns, templates, and Resend integration. Creates a full-stack app on Blob with auth, dark UI, and send tracking.
 ---
 

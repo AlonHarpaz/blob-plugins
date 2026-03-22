@@ -1,4 +1,5 @@
 ---
+name: blob
 description: Deploy and manage web apps with Blob. Guides the workflow — create apps (Workers or Containers), preview before going live, verify deploys, accept payments, debug with logs, manage databases and custom domains.
 ---
 

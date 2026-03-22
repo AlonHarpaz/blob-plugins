@@ -12,7 +12,7 @@
   "plugins": [
     {
       "name": "blob",
-      "source": "./blob",
+      "source": "blob",
       "description": "Deploy and manage web apps with Blob. Guides the workflow — create apps (Workers or Containers), preview before going live, verify deploys, accept payments, debug with logs, manage databases and custom domains.",
       "version": "1.0.0",
       "author": {
@@ -25,7 +25,7 @@
     },
     {
       "name": "email-marketing-app",
-      "source": "./email-marketing-app",
+      "source": "email-marketing-app",
       "description": "Build and deploy a complete email marketing app with contacts, campaigns, templates, and Resend integration on Blob.",
       "version": "1.0.0",
       "author": {
